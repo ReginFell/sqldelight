@@ -4,8 +4,9 @@ apply plugin: 'com.squareup.sqldelight'
 archivesBaseName = 'sample-common'
 
 sqldelight {
-  packageName = "com.example.sqldelight.hockey"
-  className = "HockeyDb"
+  HockeyDb {
+    packageName = "com.example.sqldelight.hockey"
+  }
 }
 
 
@@ -41,15 +42,18 @@ kotlin {
       }
     }
   }
-  targets {
-    targetFromPreset(presets.jvm, 'jvm')
-    def iOSTarget = System.getenv('SDK_NAME')?.startsWith("iphoneos") \
-                              ? presets.iosArm64 : presets.iosX64
 
-    fromPreset(iOSTarget, 'ios') {
-      compilations.main.outputKinds('FRAMEWORK')
-      compilations.each {
-        it.extraOpts("-linkerOpts", "-lsqlite3")
+  targetFromPreset(presets.jvm, 'jvm')
+
+  def buildForDevice = project.findProperty("device")?.toBoolean() ?: false
+  def iosPreset = (buildForDevice) ? presets.iosArm64 : presets.iosX64
+  targetFromPreset(iosPreset, 'ios') {
+    binaries {
+      framework {
+        // Disable bitcode embedding for the simulator build.
+        if (!buildForDevice) {
+          embedBitcode("disable")
+        }
       }
     }
   }
